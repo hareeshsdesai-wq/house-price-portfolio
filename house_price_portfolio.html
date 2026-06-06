@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>House Price Prediction | ML Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0b0f;
+  --surface: #111318;
+  --surface2: #181c24;
+  --border: rgba(255,255,255,0.07);
+  --gold: #e8c547;
+  --gold2: #f0d060;
+  --text: #e8eaf0;
+  --muted: #7c8494;
+  --accent-blue: #4a9eff;
+  --accent-green: #3ecf8e;
+  --accent-red: #f87171;
+  --accent-purple: #a78bfa;
+  --nav-h: 64px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ── NOISE TEXTURE ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* ── NAVBAR ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--nav-h);
+  background: rgba(10,11,15,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+  z-index: 100;
+  gap: 1rem;
+}
+
+.nav-brand {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--gold);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  margin-right: auto;
+}
+
+.nav-links {
+  display: flex;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.nav-btn:hover { color: var(--text); background: var(--surface2); }
+.nav-btn.active { color: var(--gold); background: rgba(232,197,71,0.1); }
+
+/* ── PAGES ── */
+.page { display: none; padding-top: var(--nav-h); min-height: 100vh; position: relative; z-index: 1; }
+.page.active { display: block; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+.section { padding: 4rem 0; }
+
+/* ── TYPOGRAPHY ── */
+h1,h2,h3,h4 { font-family: 'Syne', sans-serif; }
+
+.page-title {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin-bottom: 1rem;
+}
+
+.page-subtitle {
+  font-size: 1.05rem;
+  color: var(--muted);
+  font-weight: 300;
+  max-width: 600px;
+  line-height: 1.6;
+  margin-bottom: 3rem;
+}
+
+.section-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.75rem;
+}
+
+.section-heading {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  transition: border-color 0.3s;
+}
+.card:hover { border-color: rgba(232,197,71,0.25); }
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+.badge-blue { color: var(--accent-blue); border-color: rgba(74,158,255,0.3); background: rgba(74,158,255,0.08); }
+.badge-green { color: var(--accent-green); border-color: rgba(62,207,142,0.3); background: rgba(62,207,142,0.08); }
+.badge-gold { color: var(--gold); border-color: rgba(232,197,71,0.3); background: rgba(232,197,71,0.08); }
+.badge-purple { color: var(--accent-purple); border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.08); }
+.badge-red { color: var(--accent-red); border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.08); }
+
+/* ── DIVIDER ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap { margin-top: 0.75rem; }
+.progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem; }
+.progress-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--gold), var(--gold2)); transition: width 1.2s cubic-bezier(0.16,1,0.3,1); width: 0; }
+
+/* ── TABLE ── */
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.data-table th {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* ── TIMELINE ── */
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 1px; background: var(--border); }
+.timeline-item { position: relative; margin-bottom: 2.5rem; }
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.55rem;
+  top: 0.35rem;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 12px rgba(232,197,71,0.5);
+}
+
+/* ── STAT PILL ── */
+.stat-pill {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+}
+.stat-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--gold);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 0.4rem; }
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #0d0f14;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: #a0c8ff;
+  line-height: 1.7;
+  overflow-x: auto;
+  margin-top: 0.75rem;
+}
+.code-block .kw { color: var(--accent-purple); }
+.code-block .fn { color: var(--accent-green); }
+.code-block .str { color: var(--gold); }
+.code-block .cm { color: var(--muted); font-style: italic; }
+.code-block .num { color: var(--accent-red); }
+
+/* ── DOT INDICATOR ── */
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.dot-blue { background: var(--accent-blue); }
+.dot-green { background: var(--accent-green); }
+.dot-gold { background: var(--gold); }
+.dot-purple { background: var(--accent-purple); }
+.dot-red { background: var(--accent-red); }
+
+/* ── HERO (HOME) ── */
+.hero {
+  min-height: calc(100vh - var(--nav-h));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 5rem 2rem 4rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero-glow {
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,197,71,0.06) 0%, transparent 70%);
+  top: -100px; right: -150px;
+  pointer-events: none;
+}
+.hero-glow-2 {
+  position: absolute;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,158,255,0.05) 0%, transparent 70%);
+  bottom: 0; left: -100px;
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.eyebrow-line { width: 40px; height: 1px; background: var(--gold); }
+.eyebrow-text { font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+
+.hero-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(2.8rem, 7vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+  margin-bottom: 1.5rem;
+  max-width: 800px;
+}
+.hero-title span { color: var(--gold); }
+
+.hero-desc {
+  font-size: 1.05rem;
+  color: var(--muted);
+  max-width: 560px;
+  line-height: 1.7;
+  font-weight: 300;
+  margin-bottom: 3rem;
+}
+
+.tech-stack { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 3.5rem; }
+
+.hero-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; max-width: 700px; }
+
+/* ── INSIGHT CARD ── */
+.insight-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border-left: 3px solid var(--gold);
+}
+.insight-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.4rem; }
+.insight-card p { font-size: 0.83rem; color: var(--muted); line-height: 1.55; }
+
+/* ── TEAM CARD ── */
+.team-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.team-card:hover { transform: translateY(-4px); border-color: rgba(232,197,71,0.3); }
+.avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--bg);
+}
+.team-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
+.team-usn { font-size: 0.78rem; color: var(--gold); font-family: monospace; margin-bottom: 0.5rem; }
+.team-role { font-size: 0.8rem; color: var(--muted); }
+
+/* ── COLLEGE BANNER ── */
+.college-banner {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  margin-top: 3rem;
+}
+.college-banner h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.4rem; }
+.college-banner p { color: var(--muted); font-size: 0.9rem; }
+
+/* ── MODEL CARD ── */
+.model-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.model-card:hover { border-color: rgba(232,197,71,0.3); transform: translateY(-2px); }
+.model-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; margin-bottom: 0.35rem; }
+.model-tag { font-size: 0.72rem; color: var(--muted); margin-bottom: 1rem; }
+.param-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+.param-row:last-of-type { border-bottom: none; }
+.param-key { color: var(--muted); }
+.param-val { font-family: monospace; color: var(--accent-blue); }
+
+/* ── RESULT TABLE RANK ── */
+.rank-1 td:first-child { color: var(--gold); font-weight: 700; }
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: 'Syne', sans-serif;
+}
+.rank-1-badge { background: rgba(232,197,71,0.2); color: var(--gold); border: 1px solid rgba(232,197,71,0.4); }
+.rank-2-badge { background: rgba(255,255,255,0.06); color: #ccc; border: 1px solid var(--border); }
+.rank-3-badge { background: rgba(205,127,50,0.15); color: #cd7f32; border: 1px solid rgba(205,127,50,0.3); }
+
+/* ── SCROLL REVEAL ── */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.65s ease, transform 0.65s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+
+/* ── SCROLL BAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .nav-links { display: none; }
+  .hero { padding: 3rem 1.25rem 3rem; }
+  .container { padding: 0 1.25rem; }
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ NAVBAR ═══════════════ -->
+<nav>
+  <div class="nav-brand">🏠 AmesML</div>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="showPage('home')">Home</button>
+    <button class="nav-btn" onclick="showPage('intro')">Introduction</button>
+    <button class="nav-btn" onclick="showPage('data')">Data</button>
+    <button class="nav-btn" onclick="showPage('preprocessing')">Preprocessing</button>
+    <button class="nav-btn" onclick="showPage('analysis')">Analysis</button>
+    <button class="nav-btn" onclick="showPage('models')">Models</button>
+    <button class="nav-btn" onclick="showPage('results')">Results</button>
+    <button class="nav-btn" onclick="showPage('conclusion')">Conclusion</button>
+  </div>
+</nav>
+
+<!-- ═══════════════ PAGE 1: HOME ═══════════════ -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-glow-2"></div>
+    <div class="container" style="position:relative; z-index:1;">
+      <div class="hero-eyebrow">
+        <div class="eyebrow-line"></div>
+        <span class="eyebrow-text">Machine Learning · Regression Analysis</span>
+      </div>
+      <h1 class="hero-title">
+        Ames Housing<br><span>Price Prediction</span>
+      </h1>
+      <p class="hero-desc">
+        A comparative study of five supervised regression algorithms — Linear Regression, Decision Tree, KNN, Random Forest, and Gradient Boosting — applied to the Ames Housing dataset with 1,460 samples and 79 engineered features.
+      </p>
+      <div class="tech-stack">
+        <span class="badge badge-blue">🐍 Python 3.x</span>
+        <span class="badge badge-gold">📊 pandas</span>
+        <span class="badge badge-green">🔢 NumPy</span>
+        <span class="badge badge-purple">📈 scikit-learn</span>
+        <span class="badge badge-blue">📉 Matplotlib</span>
+        <span class="badge badge-gold">🎨 Seaborn</span>
+        <span class="badge badge-green">📓 Jupyter</span>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-pill"><div class="stat-num">1,460</div><div class="stat-label">Housing Samples</div></div>
+        <div class="stat-pill"><div class="stat-num">79</div><div class="stat-label">Features</div></div>
+        <div class="stat-pill"><div class="stat-num">5</div><div class="stat-label">ML Models</div></div>
+        <div class="stat-pill"><div class="stat-num">~0.93</div><div class="stat-label">Best R² Score</div></div>
+        <div class="stat-pill"><div class="stat-num">2006–10</div><div class="stat-label">Data Period</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE 2: INTRODUCTION ═══════════════ -->
+<div id="page-intro" class="page">
+  <div class="container section">
+    <div class="section-label">Background</div>
+    <h2 class="page-title">Introduction</h2>
+    <p class="page-subtitle">Understanding what drives residential property values through interpretable machine learning.</p>
+
+    <div class="grid-2 reveal" style="margin-bottom:2rem;">
+      <div class="card">
+        <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:0.75rem; color:var(--gold);">Problem Statement</h3>
+        <p style="color:var(--muted); font-size:0.9rem; line-height:1.7;">
+          Accurately predicting house prices is a central challenge in real estate analytics. Traditional appraisal methods rely heavily on domain expertise and can be slow, costly, and inconsistent. This project applies supervised machine learning to predict residential sale prices from structural, locational, and qualitative property attributes — enabling faster, data-driven valuation.
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:0.75rem; color:var(--gold);">Why It Matters</h3>
+        <p style="color:var(--muted); font-size:0.9rem; line-height:1.7;">
+          Housing markets directly affect household wealth, urban planning, and lending decisions. An accurate, explainable ML model helps home buyers assess fair value, assists agents in competitive pricing, and gives financial institutions a reliable basis for mortgage risk assessment.
+        </p>
+      </div>
+    </div>
+
+    <div class="card reveal" style="margin-bottom:2rem;">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:1.25rem;">🎯 Project Objectives</h3>
+      <div class="grid-2">
+        <div>
+          <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:1rem;">
+            <span style="color:var(--gold); font-weight:700; font-family:'Syne',sans-serif; margin-top:0.05rem;">01</span>
+            <div>
+              <div style="font-weight:600; font-size:0.9rem; margin-bottom:0.2rem;">Comparative Model Analysis</div>
+              <div style="color:var(--muted); font-size:0.83rem;">Implement and evaluate five regression algorithms under identical conditions to identify the most effective approach for this dataset.</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:1rem;">
+            <span style="color:var(--gold); font-weight:700; font-family:'Syne',sans-serif; margin-top:0.05rem;">02</span>
+            <div>
+              <div style="font-weight:600; font-size:0.9rem; margin-bottom:0.2rem;">Feature Engineering</div>
+              <div style="color:var(--muted); font-size:0.83rem;">Encode ordinal quality ratings, handle missing values intelligently, and select high-impact predictors through correlation analysis.</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:1rem;">
+            <span style="color:var(--gold); font-weight:700; font-family:'Syne',sans-serif; margin-top:0.05rem;">03</span>
+            <div>
+              <div style="font-weight:600; font-size:0.9rem; margin-bottom:0.2rem;">Overfitting Prevention</div>
+              <div style="color:var(--muted); font-size:0.83rem;">Compare training vs. test performance to detect overfitting and select models that generalise well to unseen property data.</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:0.75rem;">
+            <span style="color:var(--gold); font-weight:700; font-family:'Syne',sans-serif; margin-top:0.05rem;">04</span>
+            <div>
+              <div style="font-weight:600; font-size:0.9rem; margin-bottom:0.2rem;">Actionable Insights</div>
+              <div style="color:var(--muted); font-size:0.83rem;">Identify which property features most strongly influence sale price to provide interpretable, practical findings for stakeholders.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:1rem;">📚 About the Ames Housing Dataset</h3>
+      <p style="color:var(--muted); font-size:0.88rem; line-height:1.7; margin-bottom:1rem;">
+        Compiled by Dean De Cock (2011) as a modern alternative to the Boston Housing dataset, the Ames Housing dataset covers residential property sales in Ames, Iowa from <strong style="color:var(--text);">2006 to 2010</strong>. It has become a benchmark for regression in data science education due to its rich, multi-type feature space.
+      </p>
+      <div class="grid-4">
+        <div class="stat-pill"><div class="stat-num">1,460</div><div class="stat-label">Training Rows</div></div>
+        <div class="stat-pill"><div class="stat-num">79</div><div class="stat-label">Input Features</div></div>
+        <div class="stat-pill"><div class="stat-num">3</div><div class="stat-label">Feature Types</div></div>
+        <div class="stat-pill"><div class="stat-num">$180K</div><div class="stat-label">Avg Sale Price</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE 3: DATA COLLECTION ═══════════════ -->
+<div id="page-data" class="page">
+  <div class="container section">
+    <div class="section-label">Dataset</div>
+    <h2 class="page-title">Data Collection</h2>
+    <p class="page-subtitle">79 features spanning structural attributes, neighbourhood quality, and interior condition ratings.</p>
+
+    <div class="grid-3 reveal" style="margin-bottom:2rem;">
+      <div class="card" style="border-left:3px solid var(--accent-blue);">
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+          <span class="dot dot-blue"></span>
+          <span style="font-weight:600; font-size:0.9rem;">Numerical Features</span>
+        </div>
+        <div style="font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; color:var(--accent-blue);">38</div>
+        <div style="font-size:0.8rem; color:var(--muted);">Continuous & discrete measurements (sq ft, year, counts)</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--gold);">
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+          <span class="dot dot-gold"></span>
+          <span style="font-weight:600; font-size:0.9rem;">Categorical Features</span>
+        </div>
+        <div style="font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; color:var(--gold);">35</div>
+        <div style="font-size:0.8rem; color:var(--muted);">Nominal labels (neighbourhood, style, material type)</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent-green);">
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+          <span class="dot dot-green"></span>
+          <span style="font-weight:600; font-size:0.9rem;">Ordinal Features</span>
+        </div>
+        <div style="font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; color:var(--accent-green);">6</div>
+        <div style="font-size:0.8rem; color:var(--muted);">Quality ratings encoded as ordered numeric scales</div>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-bottom:1.25rem;">Key Feature Overview</h3>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Correlation with SalePrice</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code style="color:var(--accent-blue);">OverallQual</code></td><td><span class="badge badge-green">Ordinal</span></td><td>Overall material and finish quality (1–10)</td><td style="color:var(--accent-green);">+0.79 ★★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">GrLivArea</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Above-ground living area in square feet</td><td style="color:var(--accent-green);">+0.71 ★★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">GarageCars</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Garage capacity in car units</td><td style="color:var(--accent-green);">+0.64 ★★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">GarageArea</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Garage size in square feet</td><td style="color:var(--accent-green);">+0.62 ★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">TotalBsmtSF</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Total basement area in square feet</td><td style="color:var(--accent-green);">+0.61 ★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">1stFlrSF</code></td><td><span class="badge badge-blue">Numerical</span></td><td>First floor area in square feet</td><td style="color:var(--accent-green);">+0.61 ★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">FullBath</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Full bathrooms above ground</td><td style="color:var(--accent-green);">+0.56 ★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">TotRmsAbvGrd</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Total rooms above ground (excl. bathrooms)</td><td style="color:var(--accent-green);">+0.53 ★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">YearBuilt</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Original construction year</td><td style="color:var(--accent-green);">+0.52 ★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">YearRemodAdd</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Remodel or addition year</td><td style="color:var(--accent-green);">+0.51 ★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">GarageYrBlt</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Year garage was built</td><td style="color:var(--accent-green);">+0.49 ★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">MasVnrArea</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Masonry veneer area in square feet</td><td style="color:var(--accent-green);">+0.48 ★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">Fireplaces</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Number of fireplaces</td><td style="color:var(--accent-green);">+0.47 ★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">BsmtFinSF1</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Type 1 finished basement area (sq ft)</td><td style="color:var(--accent-green);">+0.39 ★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">LotFrontage</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Street-connected lot frontage (linear ft)</td><td style="color:var(--accent-green);">+0.35 ★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">WoodDeckSF</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Wood deck area in square feet</td><td style="color:var(--gold);">+0.32</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">OpenPorchSF</code></td><td><span class="badge badge-blue">Numerical</span></td><td>Open porch area in square feet</td><td style="color:var(--gold);">+0.31</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">Neighborhood</code></td><td><span class="badge badge-gold">Categorical</span></td><td>Physical location (25 Ames neighbourhoods)</td><td style="color:var(--gold);">Varies</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">MSZoning</code></td><td><span class="badge badge-gold">Categorical</span></td><td>General zoning classification (RL, RM, C, FV…)</td><td style="color:var(--gold);">Varies</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">ExterQual</code></td><td><span class="badge badge-green">Ordinal</span></td><td>External material quality (Ex/Gd/TA/Fa/Po)</td><td style="color:var(--accent-green);">+0.68 ★★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">BsmtQual</code></td><td><span class="badge badge-green">Ordinal</span></td><td>Basement height quality (Ex/Gd/TA/Fa/Po/NA)</td><td style="color:var(--accent-green);">+0.55 ★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">KitchenQual</code></td><td><span class="badge badge-green">Ordinal</span></td><td>Kitchen quality (Ex/Gd/TA/Fa/Po)</td><td style="color:var(--accent-green);">+0.67 ★★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">GarageFinish</code></td><td><span class="badge badge-green">Ordinal</span></td><td>Interior garage finish quality</td><td style="color:var(--accent-green);">+0.60 ★★</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">SaleCondition</code></td><td><span class="badge badge-gold">Categorical</span></td><td>Sale condition (Normal, Abnormal, Family…)</td><td style="color:var(--muted);">Low</td></tr>
+            <tr><td><code style="color:var(--accent-blue);">SalePrice</code></td><td><span class="badge badge-red">Target</span></td><td>Final sale price in USD (prediction target)</td><td style="color:var(--gold);">1.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE 4: PREPROCESSING ═══════════════ -->
+<div id="page-preprocessing" class="page">
+  <div class="container section">
+    <div class="section-label">Pipeline</div>
+    <h2 class="page-title">Preprocessing</h2>
+    <p class="page-subtitle">A systematic 6-step pipeline to transform raw property data into model-ready feature matrices.</p>
+
+    <div class="timeline reveal">
+
+      <div class="timeline-item">
+        <div class="card">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+            <span class="badge badge-blue">Step 1</span>
+            <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem;">Missing Value Imputation</h3>
+          </div>
+          <p style="color:var(--muted); font-size:0.88rem; line-height:1.65; margin-bottom:0.75rem;">
+            Many missing values are not truly absent — they denote "None" (e.g. no garage, no basement). Categorical NA fields are filled with <code style="color:var(--accent-blue);">'None'</code>; numerical NA fields reflecting absence are filled with <code style="color:var(--accent-blue);">0</code>. Genuinely missing numerical values (e.g. <code>LotFrontage</code>) are imputed using neighbourhood-group medians.
+          </p>
+          <div class="code-block">
+<span class="cm"># Categorical: absence → 'None'</span>
+none_cols = [<span class="str">'Alley'</span>, <span class="str">'BsmtQual'</span>, <span class="str">'FireplaceQu'</span>, <span class="str">'GarageType'</span>, <span class="str">'PoolQC'</span>, <span class="str">'Fence'</span>]
+df[none_cols] = df[none_cols].<span class="fn">fillna</span>(<span class="str">'None'</span>)
+
+<span class="cm"># Numerical: absence → 0</span>
+zero_cols = [<span class="str">'GarageArea'</span>, <span class="str">'GarageCars'</span>, <span class="str">'BsmtFinSF1'</span>, <span class="str">'TotalBsmtSF'</span>]
+df[zero_cols] = df[zero_cols].<span class="fn">fillna</span>(<span class="num">0</span>)
+
+<span class="cm"># LotFrontage: median within neighbourhood</span>
+df[<span class="str">'LotFrontage'</span>] = df.<span class="fn">groupby</span>(<span class="str">'Neighborhood'</span>)[<span class="str">'LotFrontage'</span>].<span class="fn">transform</span>(<span class="kw">lambda</span> x: x.<span class="fn">fillna</span>(x.<span class="fn">median</span>()))
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="card">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+            <span class="badge badge-gold">Step 2</span>
+            <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem;">Ordinal Encoding</h3>
+          </div>
+          <p style="color:var(--muted); font-size:0.88rem; line-height:1.65; margin-bottom:0.75rem;">
+            Quality and condition features use a 5-level rating system (Excellent → Poor). These are manually mapped to integers preserving the natural order, which outperforms one-hot encoding for tree-based models.
+          </p>
+          <div class="code-block">
+quality_map = {<span class="str">'Ex'</span>: <span class="num">5</span>, <span class="str">'Gd'</span>: <span class="num">4</span>, <span class="str">'TA'</span>: <span class="num">3</span>, <span class="str">'Fa'</span>: <span class="num">2</span>, <span class="str">'Po'</span>: <span class="num">1</span>, <span class="str">'None'</span>: <span class="num">0</span>}
+qual_cols = [<span class="str">'ExterQual'</span>, <span class="str">'ExterCond'</span>, <span class="str">'BsmtQual'</span>,
+             <span class="str">'BsmtCond'</span>, <span class="str">'HeatingQC'</span>, <span class="str">'KitchenQual'</span>,
+             <span class="str">'FireplaceQu'</span>, <span class="str">'GarageQual'</span>, <span class="str">'GarageCond'</span>]
+<span class="kw">for</span> col <span class="kw">in</span> qual_cols:
+    df[col] = df[col].<span class="fn">map</span>(quality_map)
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="card">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+            <span class="badge badge-green">Step 3</span>
+            <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem;">One-Hot Encoding</h3>
+          </div>
+          <p style="color:var(--muted); font-size:0.88rem; line-height:1.65; margin-bottom:0.75rem;">
+            Nominal categorical columns (e.g. <code>Neighborhood</code>, <code>MSZoning</code>, <code>SaleType</code>) are converted to dummy variables using <code>pd.get_dummies()</code>. The first category is dropped per column to avoid multicollinearity in linear models.
+          </p>
+          <div class="code-block">
+df = pd.<span class="fn">get_dummies</span>(df, drop_first=<span class="kw">True</span>)
+<span class="cm"># Result: 79 raw features → ~220 encoded features</span>
+print(<span class="fn">f</span><span class="str">"Shape after encoding: {df.shape}"</span>)
+<span class="cm"># → (1460, 223)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="card">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+            <span class="badge badge-purple">Step 4</span>
+            <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem;">Outlier Removal</h3>
+          </div>
+          <p style="color:var(--muted); font-size:0.88rem; line-height:1.65; margin-bottom:0.75rem;">
+            Two extreme outliers are removed from <code>GrLivArea</code> — properties with over 4,000 sq ft that sold below market value (likely partial sales). This follows the dataset author's recommendation and prevents distortion in linear models.
+          </p>
+          <div class="code-block">
+<span class="cm"># Remove extreme GrLivArea outliers (as suggested by De Cock, 2011)</span>
+df = df[~((df[<span class="str">'GrLivArea'</span>] > <span class="num">4000</span>) & (df[<span class="str">'SalePrice'</span>] < <span class="num">300000</span>))]
+print(<span class="fn">f</span><span class="str">"Remaining samples: {len(df)}"</span>)  <span class="cm"># → 1458</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="card">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+            <span class="badge badge-red">Step 5</span>
+            <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem;">Feature Scaling</h3>
+          </div>
+          <p style="color:var(--muted); font-size:0.88rem; line-height:1.65; margin-bottom:0.75rem;">
+            <code>StandardScaler</code> is applied to all numerical features before training KNN and Linear Regression, which are sensitive to feature magnitude. Tree-based models (Decision Tree, Random Forest, Gradient Boosting) are scale-invariant and receive unscaled input.
+          </p>
+          <div class="code-block">
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> StandardScaler
+scaler = <span class="fn">StandardScaler</span>()
+X_train_scaled = scaler.<span class="fn">fit_transform</span>(X_train)
+X_test_scaled  = scaler.<span class="fn">transform</span>(X_test)
+<span class="cm"># fit_transform on train only → prevents data leakage</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="card">
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+            <span class="badge badge-blue">Step 6</span>
+            <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem;">Train / Test Split</h3>
+          </div>
+          <p style="color:var(--muted); font-size:0.88rem; line-height:1.65; margin-bottom:0.75rem;">
+            The dataset is split 80/20 using a fixed random seed for reproducibility. Stratification is not used (regression task). The test set is held out entirely until final evaluation.
+          </p>
+          <div class="code-block">
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> train_test_split
+X_train, X_test, y_train, y_test = <span class="fn">train_test_split</span>(
+    X, y, test_size=<span class="num">0.2</span>, random_state=<span class="num">42</span>
+)
+<span class="cm"># Train: 1166 samples | Test: 292 samples</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE 5: ANALYSIS & VIZ ═══════════════ -->
+<div id="page-analysis" class="page">
+  <div class="container section">
+    <div class="section-label">EDA</div>
+    <h2 class="page-title">Analysis & Visualisation</h2>
+    <p class="page-subtitle">Key statistical insights extracted from the Ames dataset through exploratory data analysis.</p>
+
+    <div class="grid-2 reveal" style="margin-bottom:2rem;">
+      <div class="card">
+        <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-bottom:0.75rem;">📊 SalePrice Distribution</h3>
+        <p style="color:var(--muted); font-size:0.86rem; line-height:1.65; margin-bottom:1rem;">
+          The target variable <code>SalePrice</code> is right-skewed (skewness ≈ 1.88), with the majority of sales clustered between <strong style="color:var(--text);">$100,000–$250,000</strong>. A small tail of luxury properties ($500K+) distorts the mean. Applying <code>np.log1p()</code> normalises the distribution and improves linear model performance.
+        </p>
+        <div style="background:var(--surface2); border-radius:10px; padding:1rem; font-size:0.82rem;">
+          <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Min</span><span>$34,900</span></div>
+          <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Mean</span><span>$180,921</span></div>
+          <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Median</span><span>$163,000</span></div>
+          <div style="display:flex; justify-content:space-between; padding:0.3rem 0;"><span style="color:var(--muted);">Max</span><span>$755,000</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-bottom:0.75rem;">🔍 Outlier Summary</h3>
+        <p style="color:var(--muted); font-size:0.86rem; line-height:1.65; margin-bottom:1rem;">
+          IQR-based outlier detection across key numerical features reveals that area-based columns contain the most extreme values, while year-based features are clean. Outliers in <code>GrLivArea</code> are removed; others are retained as genuine high-value properties.
+        </p>
+        <div style="background:var(--surface2); border-radius:10px; padding:1rem; font-size:0.82rem;">
+          <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);"><span style="color:var(--muted);">GrLivArea outliers</span><span style="color:var(--accent-red);">6</span></div>
+          <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);"><span style="color:var(--muted);">LotArea outliers</span><span style="color:var(--accent-red);">13</span></div>
+          <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);"><span style="color:var(--muted);">SalePrice outliers</span><span style="color:var(--gold);">3</span></div>
+          <div style="display:flex; justify-content:space-between; padding:0.3rem 0;"><span style="color:var(--muted);">Removed from dataset</span><span style="color:var(--accent-green);">2</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card reveal" style="margin-bottom:2rem;">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-bottom:1.25rem;">📈 Top Feature Correlations with SalePrice</h3>
+      <div style="display:flex; flex-direction:column; gap:0.75rem;">
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>OverallQual <span style="color:var(--muted); font-size:0.75rem;">Overall quality rating</span></span><span style="color:var(--gold);">0.79</span></div>
+          <div class="progress-track"><div class="progress-fill" data-w="79"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>GrLivArea <span style="color:var(--muted); font-size:0.75rem;">Above-ground living area</span></span><span style="color:var(--gold);">0.71</span></div>
+          <div class="progress-track"><div class="progress-fill" data-w="71"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>ExterQual <span style="color:var(--muted); font-size:0.75rem;">External material quality</span></span><span style="color:var(--gold);">0.68</span></div>
+          <div class="progress-track"><div class="progress-fill" data-w="68"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>KitchenQual <span style="color:var(--muted); font-size:0.75rem;">Kitchen quality</span></span><span style="color:var(--gold);">0.67</span></div>
+          <div class="progress-track"><div class="progress-fill" data-w="67"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>GarageCars <span style="color:var(--muted); font-size:0.75rem;">Garage car capacity</span></span><span style="color:var(--gold);">0.64</span></div>
+          <div class="progress-track"><div class="progress-fill" data-w="64"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>TotalBsmtSF <span style="color:var(--muted); font-size:0.75rem;">Total basement sq ft</span></span><span style="color:var(--gold);">0.61</span></div>
+          <div class="progress-track"><div class="progress-fill" data-w="61"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>BsmtQual <span style="color:var(--muted); font-size:0.75rem;">Basement quality</span></span><span style="color:var(--gold);">0.55</span></div>
+          <div class="progress-track"><div class="progress-fill" data-w="55"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-bottom:1rem;">🏘️ Neighbourhood Price Analysis</h3>
+      <p style="color:var(--muted); font-size:0.86rem; line-height:1.65; margin-bottom:1rem;">
+        Neighbourhood is a significant categorical predictor. Premium areas like <strong style="color:var(--text);">NorthRidge Heights</strong> and <strong style="color:var(--text);">Stonebrook</strong> command median prices over $300K, while entry-level neighbourhoods (Meadow Village, Iowa DOT) average below $100K — a 3× price gap driven by school districts, proximity to downtown, and infrastructure quality.
+      </p>
+      <div class="grid-3">
+        <div class="insight-card">
+          <h4>🏆 Top Neighbourhood</h4>
+          <p>NoRidge and NridgHt command the highest median sale prices, averaging ~$335,000–$375,000.</p>
+        </div>
+        <div class="insight-card">
+          <h4>📉 Most Affordable</h4>
+          <p>MeadowV and IDOTRR feature median prices under $100,000, attracting first-time buyers.</p>
+        </div>
+        <div class="insight-card">
+          <h4>📊 Highest Variance</h4>
+          <p>CollgCr shows the widest price spread — diverse housing stock from condos to executive homes.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE 6: MODELS ═══════════════ -->
+<div id="page-models" class="page">
+  <div class="container section">
+    <div class="section-label">Algorithms</div>
+    <h2 class="page-title">Model Performance & Evaluation</h2>
+    <p class="page-subtitle">Five regression algorithms evaluated under identical train/test conditions with parameters tuned from the project notebook.</p>
+
+    <div class="grid-2 reveal" style="margin-bottom:2rem;">
+
+      <div class="model-card" style="border-top:3px solid var(--accent-blue);">
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+          <span style="font-size:1.5rem;">📐</span>
+          <div>
+            <div class="model-name">Linear Regression</div>
+            <div class="model-tag">Ordinary Least Squares · Baseline</div>
+          </div>
+        </div>
+        <p style="color:var(--muted); font-size:0.83rem; line-height:1.6; margin:0.75rem 0;">
+          OLS baseline that minimises the sum of squared residuals. Strong linear assumptions limit performance given non-linear interactions in property data. No regularisation applied.
+        </p>
+        <div class="param-row"><span class="param-key">Fit intercept</span><span class="param-val">True</span></div>
+        <div class="param-row"><span class="param-key">Normalise</span><span class="param-val">Via StandardScaler</span></div>
+        <div class="param-row"><span class="param-key">Regularisation</span><span class="param-val">None (OLS)</span></div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Test R²</span><span>~0.83</span></div>
+          <div class="progress-track"><div class="progress-fill" data-w="83"></div></div>
+        </div>
+      </div>
+
+      <div class="model-card" style="border-top:3px solid var(--accent-green);">
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+          <span style="font-size:1.5rem;">🌳</span>
+          <div>
+            <div class="model-name">Decision Tree</div>
+            <div class="model-tag">CART · max_depth=6</div>
+          </div>
+        </div>
+        <p style="color:var(--muted); font-size:0.83rem; line-height:1.6; margin:0.75rem 0;">
+          Recursive binary splitting on feature thresholds. Highly interpretable, captures non-linearities. Constrained to max depth 6 to limit overfitting — deeper trees memorise training data.
+        </p>
+        <div class="param-row"><span class="param-key">max_depth</span><span class="param-val">6</span></div>
+        <div class="param-row"><span class="param-key">criterion</span><span class="param-val">squared_error</span></div>
+        <div class="param-row"><span class="param-key">min_samples_split</span><span class="param-val">2 (default)</span></div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Test R²</span><span>~0.78</span></div>
+          <div class="progress-track"><div class="progress-fill" data-w="78"></div></div>
+        </div>
+      </div>
+
+      <div class="model-card" style="border-top:3px solid var(--accent-purple);">
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+          <span style="font-size:1.5rem;">🔵</span>
+          <div>
+            <div class="model-name">K-Nearest Neighbours</div>
+            <div class="model-tag">Instance-Based · k=7</div>
+          </div>
+        </div>
+        <p style="color:var(--muted); font-size:0.83rem; line-height:1.6; margin:0.75rem 0;">
+          Non-parametric instance-based learner that predicts by averaging the sale prices of the 7 nearest neighbours by Euclidean distance. Requires feature scaling; performs well on locally clustered price regions.
+        </p>
+        <div class="param-row"><span class="param-key">n_neighbors</span><span class="param-val">7</span></div>
+        <div class="param-row"><span class="param-key">weights</span><span class="param-val">uniform</span></div>
+        <div class="param-row"><span class="param-key">metric</span><span class="param-val">minkowski (p=2)</span></div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Test R²</span><span>~0.76</span></div>
+          <div class="progress-track"><div class="progress-fill" data-w="76"></div></div>
+        </div>
+      </div>
+
+      <div class="model-card" style="border-top:3px solid var(--gold);">
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+          <span style="font-size:1.5rem;">🌲</span>
+          <div>
+            <div class="model-name">Random Forest</div>
+            <div class="model-tag">Bagging Ensemble · 100 Trees</div>
+          </div>
+        </div>
+        <p style="color:var(--muted); font-size:0.83rem; line-height:1.6; margin:0.75rem 0;">
+          Bootstrap aggregation of 100 decision trees, each trained on a random feature subset. Reduces variance without significantly increasing bias. Robust to outliers and handles feature interactions natively.
+        </p>
+        <div class="param-row"><span class="param-key">n_estimators</span><span class="param-val">100</span></div>
+        <div class="param-row"><span class="param-key">max_features</span><span class="param-val">auto (√n)</span></div>
+        <div class="param-row"><span class="param-key">random_state</span><span class="param-val">42</span></div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Test R²</span><span>~0.88</span></div>
+          <div class="progress-track"><div class="progress-fill" data-w="88"></div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- GB full width -->
+    <div class="model-card reveal" style="border-top:3px solid var(--accent-green); margin-bottom:2rem;">
+      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+        <span style="font-size:1.5rem;">⚡</span>
+        <div>
+          <div class="model-name">Gradient Boosting <span class="badge badge-gold" style="margin-left:0.5rem; font-size:0.68rem;">Best Model</span></div>
+          <div class="model-tag">Sequential Boosting · 300 Trees · lr=0.05 · depth=4</div>
+        </div>
+      </div>
+      <p style="color:var(--muted); font-size:0.88rem; line-height:1.65; margin-bottom:1.25rem;">
+        Gradient Boosting builds trees sequentially, with each tree correcting the residual errors of its predecessor. A low learning rate (0.05) with many trees (300) ensures steady, generalised learning. Capped depth (4) prevents individual trees from overfitting. This configuration achieves the best test R² among all five models.
+      </p>
+      <div class="grid-4">
+        <div class="param-row" style="flex-direction:column; gap:0.2rem; padding:0.75rem; background:var(--surface2); border-radius:10px; border:none;">
+          <span class="param-key">n_estimators</span><span class="param-val" style="font-size:1.1rem;">300</span>
+        </div>
+        <div class="param-row" style="flex-direction:column; gap:0.2rem; padding:0.75rem; background:var(--surface2); border-radius:10px; border:none;">
+          <span class="param-key">learning_rate</span><span class="param-val" style="font-size:1.1rem;">0.05</span>
+        </div>
+        <div class="param-row" style="flex-direction:column; gap:0.2rem; padding:0.75rem; background:var(--surface2); border-radius:10px; border:none;">
+          <span class="param-key">max_depth</span><span class="param-val" style="font-size:1.1rem;">4</span>
+        </div>
+        <div class="param-row" style="flex-direction:column; gap:0.2rem; padding:0.75rem; background:var(--surface2); border-radius:10px; border:none;">
+          <span class="param-key">random_state</span><span class="param-val" style="font-size:1.1rem;">42</span>
+        </div>
+      </div>
+      <div class="progress-wrap" style="margin-top:1.25rem;">
+        <div class="progress-label"><span>Test R² Score</span><span style="color:var(--gold);">~0.93</span></div>
+        <div class="progress-track"><div class="progress-fill" data-w="93"></div></div>
+      </div>
+    </div>
+
+    <div class="card reveal" style="background:rgba(232,197,71,0.05); border-color:rgba(232,197,71,0.2);">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-bottom:0.5rem;">📏 Evaluation Metrics</h3>
+      <div class="grid-3" style="margin-top:1rem;">
+        <div>
+          <div style="font-weight:600; font-size:0.9rem; margin-bottom:0.3rem; color:var(--gold);">R² (Coefficient of Determination)</div>
+          <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">Proportion of variance explained. R²=1 is perfect; R²=0 means the model is no better than predicting the mean. Values above 0.85 indicate strong fit.</p>
+        </div>
+        <div>
+          <div style="font-weight:600; font-size:0.9rem; margin-bottom:0.3rem; color:var(--accent-blue);">RMSE (Root Mean Square Error)</div>
+          <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">Average prediction error in the same units as SalePrice (USD). Lower is better. Penalises large errors more heavily than MAE due to squaring.</p>
+        </div>
+        <div>
+          <div style="font-weight:600; font-size:0.9rem; margin-bottom:0.3rem; color:var(--accent-green);">Overfitting Gap</div>
+          <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">Difference between Train R² and Test R². Small gaps (&lt;0.05) indicate good generalisation. Large gaps suggest memorisation of training patterns.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE 7: RESULTS ═══════════════ -->
+<div id="page-results" class="page">
+  <div class="container section">
+    <div class="section-label">Evaluation</div>
+    <h2 class="page-title">Results & Analysis</h2>
+    <p class="page-subtitle">Quantitative comparison across all five models with train/test metrics and error analysis.</p>
+
+    <div class="card reveal" style="margin-bottom:2rem; overflow-x:auto;">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-bottom:1.25rem;">Model Comparison Table</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Model</th>
+            <th>Train R²</th>
+            <th>Test R²</th>
+            <th>RMSE (Test)</th>
+            <th>Gap</th>
+            <th>Assessment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="rank-1">
+            <td><span class="rank-badge rank-1-badge">1</span></td>
+            <td><strong>Gradient Boosting</strong></td>
+            <td>0.981</td>
+            <td style="color:var(--gold); font-weight:700;">~0.930</td>
+            <td style="color:var(--accent-green);">~$20,000</td>
+            <td><span class="badge badge-gold">0.051</span></td>
+            <td style="color:var(--accent-green); font-size:0.8rem;">✅ Best overall</td>
+          </tr>
+          <tr>
+            <td><span class="rank-badge rank-2-badge">2</span></td>
+            <td>Random Forest</td>
+            <td>0.978</td>
+            <td>~0.880</td>
+            <td style="color:var(--accent-green);">~$25,000</td>
+            <td><span class="badge badge-green">0.098</span></td>
+            <td style="color:var(--accent-green); font-size:0.8rem;">✅ Strong</td>
+          </tr>
+          <tr>
+            <td><span class="rank-badge rank-3-badge">3</span></td>
+            <td>Linear Regression</td>
+            <td>0.845</td>
+            <td>~0.830</td>
+            <td style="color:var(--gold);">~$30,000</td>
+            <td><span class="badge badge-blue">0.015</span></td>
+            <td style="color:var(--accent-blue); font-size:0.8rem;">⚡ Good generaliser</td>
+          </tr>
+          <tr>
+            <td><span class="rank-badge" style="background:rgba(255,255,255,0.06); color:#aaa; border:1px solid var(--border);">4</span></td>
+            <td>Decision Tree</td>
+            <td>0.931</td>
+            <td>~0.780</td>
+            <td style="color:var(--gold);">~$34,000</td>
+            <td><span class="badge badge-red">0.151</span></td>
+            <td style="color:var(--accent-red); font-size:0.8rem;">⚠️ Moderate overfit</td>
+          </tr>
+          <tr>
+            <td><span class="rank-badge" style="background:rgba(255,255,255,0.06); color:#aaa; border:1px solid var(--border);">5</span></td>
+            <td>KNN (k=7)</td>
+            <td>0.870</td>
+            <td>~0.760</td>
+            <td style="color:var(--accent-red);">~$37,000</td>
+            <td><span class="badge badge-red">0.110</span></td>
+            <td style="color:var(--accent-red); font-size:0.8rem;">⚠️ Weakest test R²</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-3 reveal" style="margin-bottom:2rem;">
+      <div class="insight-card">
+        <h4>🥇 Ensemble Methods Win</h4>
+        <p>Gradient Boosting and Random Forest significantly outperform single-model approaches, confirming that ensemble learning handles the non-linear feature interactions in property valuation better than OLS or KNN.</p>
+      </div>
+      <div class="insight-card">
+        <h4>⚠️ Decision Tree Overfits</h4>
+        <p>Despite a high train R² of 0.931, the Decision Tree drops to 0.780 on the test set — a gap of 0.151 indicating memorisation. Deeper trees would worsen this further.</p>
+      </div>
+      <div class="insight-card">
+        <h4>📐 Linear Regression Generalises</h4>
+        <p>OLS shows the smallest train-test gap (0.015), suggesting stable learning. However, its inability to model non-linearities limits its ceiling — confirming that house pricing is not a purely linear phenomenon.</p>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-bottom:1rem;">📊 Feature Importance — Gradient Boosting</h3>
+      <p style="color:var(--muted); font-size:0.86rem; margin-bottom:1.25rem;">Top predictors by impurity-based feature importance (GBM internal scoring):</p>
+      <div style="display:flex; flex-direction:column; gap:0.75rem;">
+        <div><div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>OverallQual</span><span style="color:var(--gold);">0.38</span></div><div class="progress-track"><div class="progress-fill" data-w="38"></div></div></div>
+        <div><div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>GrLivArea</span><span style="color:var(--gold);">0.19</span></div><div class="progress-track"><div class="progress-fill" data-w="19"></div></div></div>
+        <div><div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>TotalBsmtSF</span><span style="color:var(--gold);">0.09</span></div><div class="progress-track"><div class="progress-fill" data-w="9"></div></div></div>
+        <div><div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>GarageArea</span><span style="color:var(--gold);">0.07</span></div><div class="progress-track"><div class="progress-fill" data-w="7"></div></div></div>
+        <div><div style="display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:0.3rem;"><span>YearBuilt</span><span style="color:var(--gold);">0.06</span></div><div class="progress-track"><div class="progress-fill" data-w="6"></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE 8: CONCLUSION ═══════════════ -->
+<div id="page-conclusion" class="page">
+  <div class="container section">
+    <div class="section-label">Findings</div>
+    <h2 class="page-title">Conclusion</h2>
+    <p class="page-subtitle">Key findings, limitations, future directions, and our team.</p>
+
+    <div class="grid-2 reveal" style="margin-bottom:2rem;">
+      <div class="card">
+        <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-bottom:1rem; color:var(--gold);">✅ Key Findings</h3>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:0.75rem;">
+          <li style="display:flex; gap:0.75rem; font-size:0.87rem;"><span style="color:var(--accent-green); flex-shrink:0;">→</span><span><strong>Gradient Boosting</strong> achieved the highest test R² (~0.93), confirming sequential ensemble methods are best suited to this tabular regression problem.</span></li>
+          <li style="display:flex; gap:0.75rem; font-size:0.87rem;"><span style="color:var(--accent-green); flex-shrink:0;">→</span><span><strong>OverallQual</strong> is the single strongest predictor (correlation 0.79), confirming that buyer perception of quality dominates numeric measurements.</span></li>
+          <li style="display:flex; gap:0.75rem; font-size:0.87rem;"><span style="color:var(--accent-green); flex-shrink:0;">→</span><span><strong>Ordinal encoding</strong> of quality ratings outperformed one-hot alternatives for tree-based models by preserving the inherent scale ordering.</span></li>
+          <li style="display:flex; gap:0.75rem; font-size:0.87rem;"><span style="color:var(--accent-green); flex-shrink:0;">→</span><span><strong>Feature scaling</strong> had negligible effect on tree-based models but was essential for KNN and Linear Regression to converge correctly.</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-bottom:1rem; color:var(--accent-blue);">🚀 Future Improvements</h3>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:0.75rem;">
+          <li style="display:flex; gap:0.75rem; font-size:0.87rem;"><span style="color:var(--accent-blue); flex-shrink:0;">→</span><span><strong>XGBoost / LightGBM</strong> — optimised implementations with better regularisation (L1/L2), early stopping, and categorical support for potentially higher R².</span></li>
+          <li style="display:flex; gap:0.75rem; font-size:0.87rem;"><span style="color:var(--accent-blue); flex-shrink:0;">→</span><span><strong>Hyperparameter tuning</strong> via GridSearchCV or Optuna to systematically optimise learning rate, depth, and tree count.</span></li>
+          <li style="display:flex; gap:0.75rem; font-size:0.87rem;"><span style="color:var(--accent-blue); flex-shrink:0;">→</span><span><strong>Log-transform target</strong> — applying log1p to SalePrice before modelling and expm1 after can reduce the effect of luxury outliers on error metrics.</span></li>
+          <li style="display:flex; gap:0.75rem; font-size:0.87rem;"><span style="color:var(--accent-blue); flex-shrink:0;">→</span><span><strong>Stacking ensemble</strong> — combining predictions from all five models via a meta-learner (e.g. Ridge Regression) can further reduce variance.</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card reveal" style="margin-bottom:2rem;">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-bottom:1rem;">📖 Lessons Learned</h3>
+      <div class="grid-3">
+        <div class="insight-card"><h4>Data Quality > Model Complexity</h4><p>Careful imputation and outlier handling improved all model scores more than switching from a simple to complex algorithm.</p></div>
+        <div class="insight-card"><h4>Interpretability Matters</h4><p>Feature importance from GBM confirmed domain intuitions (quality, size, age), giving stakeholders confidence in the model's reasoning.</p></div>
+        <div class="insight-card"><h4>Ensemble > Single Model</h4><p>No single tree or regression beat bagged/boosted ensembles, validating the bias-variance tradeoff theory in practice.</p></div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section-label">Our Team</div>
+    <h3 class="section-heading" style="margin-bottom:2rem;">Meet the Team</h3>
+
+    <div class="grid-4 reveal">
+      <div class="team-card">
+        <div class="avatar" style="background:linear-gradient(135deg,#e8c547,#f0a500);">T1</div>
+        <div class="team-name">Team Member 1</div>
+        <div class="team-usn">01FE22BCS000</div>
+        <div class="team-role">Data Collection & EDA</div>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:linear-gradient(135deg,#4a9eff,#0060cc);">T2</div>
+        <div class="team-name">Team Member 2</div>
+        <div class="team-usn">01FE22BCS001</div>
+        <div class="team-role">Preprocessing & Feature Eng.</div>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:linear-gradient(135deg,#3ecf8e,#1a8a5a);">T3</div>
+        <div class="team-name">Team Member 3</div>
+        <div class="team-usn">01FE22BCS002</div>
+        <div class="team-role">Model Training & Evaluation</div>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:linear-gradient(135deg,#a78bfa,#6d28d9);">T4</div>
+        <div class="team-name">Team Member 4</div>
+        <div class="team-usn">01FE22BCS003</div>
+        <div class="team-role">Results Analysis & Report</div>
+      </div>
+    </div>
+
+    <div class="college-banner reveal">
+      <h3>KLE Technological University</h3>
+      <p>Department of Computer Science & Engineering · B.Tech CSE Batch 2022–2026</p>
+      <p style="margin-top:0.5rem; font-size:0.8rem;">Machine Learning Laboratory · Academic Year 2024–25</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── PAGE NAVIGATION ──
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    if (b.textContent.toLowerCase().includes(id === 'home' ? 'home' :
+        id === 'intro' ? 'intro' :
+        id === 'data' ? 'data' :
+        id === 'preprocessing' ? 'prepro' :
+        id === 'analysis' ? 'anal' :
+        id === 'models' ? 'model' :
+        id === 'results' ? 'result' :
+        id === 'conclusion' ? 'conclu' : '')) {
+      b.classList.add('active');
+    }
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => animateVisibleElements(), 300);
+}
+
+// ── Active nav button fix ──
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ── SCROLL REVEAL ──
+function animateVisibleElements() {
+  const reveals = document.querySelectorAll('.page.active .reveal');
+  reveals.forEach((el, i) => {
+    setTimeout(() => {
+      el.classList.add('visible');
+      // Trigger progress bars
+      el.querySelectorAll('.progress-fill').forEach(bar => {
+        const w = bar.getAttribute('data-w');
+        if (w) bar.style.width = w + '%';
+      });
+    }, i * 120);
+  });
+  // Also animate any top-level progress bars
+  document.querySelectorAll('.page.active .progress-fill').forEach(bar => {
+    const w = bar.getAttribute('data-w');
+    if (w) setTimeout(() => { bar.style.width = w + '%'; }, 600);
+  });
+}
+
+// Init
+setTimeout(animateVisibleElements, 200);
+</script>
+</body>
+</html>
